@@ -7,6 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Dijital Saat">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="orientation" content="landscape">
     
     <title>Dijital Saat</title>
     
@@ -95,6 +98,43 @@
 
         #settingsBtn:active {
             transform: scale(0.95) rotate(90deg);
+        }
+
+        /* Ana Ekrana Ekle Butonu */
+        #installBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #installBtn.show {
+            display: flex;
+        }
+
+        #installBtn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        #installBtn:active {
+            transform: translateY(0);
         }
 
         /* Ayarlar Menüsü */
@@ -246,6 +286,10 @@
             display: none;
         }
 
+        .fullscreen #installBtn {
+            display: none !important;
+        }
+
         .fullscreen #settingsMenu {
             display: none;
         }
@@ -350,6 +394,12 @@
     <!-- Ayarlar Butonu -->
     <button id="settingsBtn" title="Ayarlar">⚙</button>
 
+    <!-- Ana Ekrana Ekle Butonu -->
+    <button id="installBtn" title="Ana Ekrana Ekle">
+        <span>📱</span>
+        <span>Ana Ekrana Ekle</span>
+    </button>
+
     <!-- Tam Ekran İpucu -->
     <div id="fullscreenHint">Yatay kaydır veya ESC</div>
 
@@ -394,6 +444,31 @@
         let currentScale = 1;
         let isFullscreen = false;
         let fullscreenHintTimeout;
+        let deferredPrompt;
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').classList.add('show');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            document.getElementById('installBtn').classList.remove('show');
+        });
+
+        async function installApp() {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                deferredPrompt = null;
+                document.getElementById('installBtn').classList.remove('show');
+            }
+        }
 
         // Saati Güncelle
         function updateClock() {
@@ -508,6 +583,9 @@
             document.getElementById('settingsBtn').addEventListener('click', toggleSettings);
             document.getElementById('closeMenu').addEventListener('click', closeSettings);
             document.getElementById('overlay').addEventListener('click', closeSettings);
+            
+            // Ana Ekrana Ekle Butonu
+            document.getElementById('installBtn').addEventListener('click', installApp);
             
             // Renk Butonları
             document.querySelectorAll('.color-btn').forEach(btn => {
